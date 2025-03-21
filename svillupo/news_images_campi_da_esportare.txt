@@ -1,0 +1,43 @@
+campi da esportare (se non sono vuoti):
+---- tabella news ----
+news_title
+news_date
+date_updated
+news_p1
+news_p2
+news_p3
+news_p4
+news_p5
+news_p6
+news_p7
+news_p8
+news_p9
+news_p10
+news_p11
+signature
+news_image
+news_image2
+news_image3
+news_image4
+news_image5
+news_image6
+news_image7
+news_image8
+news_image9
+news_image10
+news_image11
+news_image12
+news_image13
+news_image14
+news_image15
+news_image16
+news_image17
+news_image18
+news_image19
+news_image20
+news_image21
+ 
+---- tabella images ----
+campi da esportare (se type == news AND se non sono vuoti):
+image_name
+image_caption
