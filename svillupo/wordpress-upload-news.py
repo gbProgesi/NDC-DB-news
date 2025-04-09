@@ -77,7 +77,7 @@ def costruisci_contenuto_html(news_row, immagini):
     for i in range(1, 12):
         testo = news_row.get(f'news_p{i}')
         if pd.notnull(testo):
-            contenuto += f"<p>{testo}</p>\n"
+            contenuto += f'<p class="eplus-wrapper">{testo}</p>\n'
 
     # Aggiungi immagini con didascalia
     for img in immagini:
