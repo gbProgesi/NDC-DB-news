@@ -4,6 +4,8 @@ import requests
 from requests.auth import HTTPBasicAuth
 import tkinter as tk
 from tkinter import filedialog
+from tqdm import tqdm  # Per la barra di avanzamento
+import time  # Per calcolare il tempo totale
 
 # =======================
 # CONFIGURAZIONE
@@ -127,7 +129,7 @@ def ottieni_immagini(news_row):
 
 def carica_immagine(percorso_locale):
     if not os.path.exists(percorso_locale):
-        print(f"❌ Immagine non trovata: {percorso_locale}")
+        tqdm.write(f"❌ Immagine non trovata: {percorso_locale}")
         return None
 
     nome_file = os.path.basename(percorso_locale)
@@ -150,7 +152,7 @@ def carica_immagine(percorso_locale):
             'url': media_data['source_url']
         }
     else:
-        print(f"❌ Errore caricando l'immagine {nome_file}: {risposta.content}")
+        tqdm.write(f"❌ Errore caricando l'immagine {nome_file}: {risposta.content}")
         return None
 
 def pubblica_noticia(titolo, contenuto, data_pubblicazione, news_id, featured_image_id=None):
@@ -175,7 +177,6 @@ def pubblica_noticia(titolo, contenuto, data_pubblicazione, news_id, featured_im
     )
 
     if risposta.status_code == 201:
-        print(f"✅ Pubblicato: {titolo}")
         log_successi.append({
             "news_id": news_id,
             "titolo": titolo,
@@ -184,7 +185,6 @@ def pubblica_noticia(titolo, contenuto, data_pubblicazione, news_id, featured_im
         })
     else:
         errore = risposta.content.decode(errors='ignore')
-        print(f"❌ Errore pubblicando '{titolo}': {errore}")
         log_errori.append({
             "news_id": news_id,
             "titolo": titolo,
@@ -194,31 +194,55 @@ def pubblica_noticia(titolo, contenuto, data_pubblicazione, news_id, featured_im
         })
 
 # =======================
-# CICLO PRINCIPALE
+# CICLO PRINCIPALE CON BARRA DI AVANZAMENTO
 # =======================
-for idx, riga in df_news.iterrows():
-    titolo = riga['news_title']
-    data_pubblicazione = riga['news_date']
-    immagini_info = ottieni_immagini(riga)
+start_time = time.time()  # Inizio del timer
 
-    # Carica immagini e ottieni URL
-    immagini_con_url = []
-    id_immagine_principale = None
+# Lunghezza fissa per il titolo 
+LUNGHEZZA_TITOLO = 80
 
-    for i, img in enumerate(immagini_info):
-        risultato = carica_immagine(img['local_path'])
-        if risultato:
-            immagini_con_url.append({
-                'url': risultato['url'],
-                'caption': img['caption']
-            })
-            if i == 0:
-                id_immagine_principale = risultato['id']
+# Inizializza la barra di avanzamento
+with tqdm(
+    total=len(df_news), 
+    desc="Caricamento notizie", 
+    unit="notizia", 
+    dynamic_ncols=True, 
+    bar_format="{desc} {bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]"
+    )  as pbar:
 
-    contenuto_html = costruisci_contenuto_html(riga, immagini_con_url)
+    for idx, riga in df_news.iterrows():
+        titolo = riga['news_title']
+        data_pubblicazione = riga['news_date']
+        immagini_info = ottieni_immagini(riga)
 
-    pubblica_noticia(titolo, contenuto_html, data_pubblicazione, riga['news_id'], id_immagine_principale)
-    
+        # Carica immagini e ottieni URL
+        immagini_con_url = []
+        id_immagine_principale = None
+
+        for i, img in enumerate(immagini_info):
+            risultato = carica_immagine(img['local_path'])
+            if risultato:
+                immagini_con_url.append({
+                    'url': risultato['url'],
+                    'caption': img['caption']
+                })
+                if i == 0:
+                    id_immagine_principale = risultato['id']
+
+        contenuto_html = costruisci_contenuto_html(riga, immagini_con_url)
+
+        pubblica_noticia(titolo, contenuto_html, data_pubblicazione, riga['news_id'], id_immagine_principale)
+        
+        titolo_pulito = titolo.replace('\n', ' ').replace('\r', '')
+        titolo_troncato = (titolo_pulito[:LUNGHEZZA_TITOLO] + "...") if len(titolo_pulito) > LUNGHEZZA_TITOLO else titolo_pulito.ljust(LUNGHEZZA_TITOLO)
+        pbar.set_description(f"✅ Notizia publicata: {titolo_troncato}")
+
+        # Aggiorna la barra di avanzamento
+        pbar.update(1)
+
+# Calcola il tempo totale impiegato
+end_time = time.time()
+tempo_totale = end_time - start_time
 
 # =======================
 # ESPORTA LOG IN EXCEL
@@ -229,3 +253,6 @@ with pd.ExcelWriter(percorso_log, engine="openpyxl") as writer:
     pd.DataFrame(log_errori).to_excel(writer, sheet_name="errori", index=False)
 
 print(f"\n📄 Log salvato in: {percorso_log}")
+
+# Mostra il tempo totale impiegato
+print(f"\n⏱️ Tempo totale impiegato: {tempo_totale:.2f} secondi")
