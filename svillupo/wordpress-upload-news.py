@@ -16,6 +16,18 @@ MAX_NEWS_ID = 1903
 
 auth = HTTPBasicAuth(WORDPRESS_USER, WORDPRESS_PASS)
 
+# Pulisce il terminale e mostra il titolo
+def pulisci_terminale_e_mostra_titolo():
+    # Pulisce il terminale
+    os.system('cls' if os.name == 'nt' else 'clear')
+    
+    # Stampa il titolo
+    print("=" * 50)
+    print("PROGRAMA PER CARICARE NEWS IN WORDPRESS".center(50))
+    print("=" * 50)
+
+pulisci_terminale_e_mostra_titolo()
+
 # =======================
 # OTTIENE O CREA CATEGORIA
 # =======================
