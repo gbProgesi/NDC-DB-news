@@ -113,31 +113,6 @@ def ottieni_immagini(news_row):
                 })
     return immagini
 
-"""def carica_immagine(percorso_locale):
-     if not os.path.exists(percorso_locale):
-        print(f"❌ Immagine non trovata: {percorso_locale}")
-        return None
-
-    nome_file = os.path.basename(percorso_locale)
-    headers = {
-        'Content-Disposition': f'attachment; filename="{nome_file}"'
-    }
-
-    with open(percorso_locale, 'rb') as img_file:
-        risposta = requests.post(
-            f"{WORDPRESS_URL}/media",
-            headers=headers,
-            files={'file': img_file},
-            auth=auth
-        )
-
-    if risposta.status_code == 201:
-        media_data = risposta.json()
-        return media_data['source_url']
-    else:
-        print(f"❌ Errore caricando l'immagine {nome_file}: {risposta.content}")
-        return None """
-
 def carica_immagine(percorso_locale):
     if not os.path.exists(percorso_locale):
         print(f"❌ Immagine non trovata: {percorso_locale}")
