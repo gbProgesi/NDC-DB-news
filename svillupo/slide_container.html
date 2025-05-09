@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slider Preview</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        .slider-container { max-width: 800px; margin: 0 auto; overflow: hidden; position: relative; background-color: #fff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .slider-item { display: none; text-align: center; padding: 20px; }
+        .slider-item.active { display: block; }
+        .slider-item img { width: 100%; border-radius: 10px; }
+        .slider-title { font-size: 18px; font-weight: bold; margin-top: 15px; }
+        .arrow { position: absolute; top: 50%; transform: translateY(-50%); font-size: 30px; color: #333; cursor: pointer; background-color: rgba(255,255,255,0.8); border-radius: 50%; padding: 5px 10px; }
+        .arrow.left { left: 10px; }
+        .arrow.right { right: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="slider-container">
+    <div class="slider-item active">
+        <img src="images_test/142FS1-FRA_1_1.jpg" alt="Working Group Committee">
+        <div class="slider-title">Working Group Committee discussing Strategic Foresight at MSCPI 145-1</div>
+    </div>
+    <div class="slider-item">
+        <img src="images_test/142FS1-FRA_2_0.jpg" alt="Faculty Advisor Joachim Hahn">
+        <div class="slider-title">Faculty Advisor Joachim Hahn talking to Course participants</div>
+    </div>
+    <div class="slider-item">
+        <img src="images_test/142FS1-FRA_3_0.jpg" alt="Group photo of participants">
+        <div class="slider-title">Group photo of participants of MSCPI 145-1 in front of the NATO Defense College</div>
+    </div>
+    <div class="arrow left" onclick="changeSlide(-1)">&#10094;</div>
+    <div class="arrow right" onclick="changeSlide(1)">&#10095;</div>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slider-item');
+
+    function changeSlide(direction) {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = (currentSlide + direction + slides.length) % slides.length;
+        slides[currentSlide].classList.add('active');
+    }
+</script>
+
+</body>
+</html>

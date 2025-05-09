@@ -7,14 +7,43 @@ from tkinter import filedialog
 from tqdm import tqdm  # Per la barra di avanzamento
 import time  # Per calcolare il tempo totale
 
+
 # =======================
 # CONFIGURAZIONE
 # =======================
-WORDPRESS_URL = "http://localhost/wordpress/wp-json/wp/v2"
-WORDPRESS_USER = "ndc_publisher"
-WORDPRESS_PASS = "ndc12345"
+
+# Dati WordPress locale
+LOCAL_URL = "http://localhost/wordpress/wp-json/wp/v2"
+LOCAL_USER = "ndc_publisher"
+LOCAL_PASS = "ndc12345"
+
+# Dati WordPress online
+ONLINE_URL = "https://srvdockericdp.bvtr.net/ndc/wp-json/wp/v2"
+ONLINE_USER = "giaber"
+ONLINE_PASS = "xMfzjjyBRxtpAX"
+
 CARTELLA_IMMAGINI = r"C:\Users\gbernardini\OneDrive - BV TECH S.p.A\ndc\NDC DB news"
 MAX_NEWS_ID = 1903
+
+# Funzione per controllare se il sito è attivo
+def is_site_up(url, user, password):
+    try:
+        response = requests.get(f"{url}/posts", auth=HTTPBasicAuth(user, password), timeout=5)
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
+    
+# Scelta automatica dell'ambiente
+if is_site_up(LOCAL_URL, LOCAL_USER, LOCAL_PASS):
+    WORDPRESS_URL = LOCAL_URL
+    WORDPRESS_USER = LOCAL_USER
+    WORDPRESS_PASS = LOCAL_PASS
+    print("✔️ Usando WordPress locale")
+else:
+    WORDPRESS_URL = ONLINE_URL
+    WORDPRESS_USER = ONLINE_USER
+    WORDPRESS_PASS = ONLINE_PASS
+    print("🌐 Usando WordPress online")
 
 auth = HTTPBasicAuth(WORDPRESS_USER, WORDPRESS_PASS)
 
@@ -35,7 +64,7 @@ pulisci_terminale_e_mostra_titolo()
 # =======================
 def ottieni_o_crea_categoria(nome_categoria):
     url = f"{WORDPRESS_URL}/categories?slug={nome_categoria}"
-    risposta = requests.get(url, auth=auth)
+    risposta = requests.get(url, auth=auth, verify=False)  # Disabilita la verifica SSL (non raccomandato in produzione)
 
     if risposta.status_code == 200:
         categorie = risposta.json()
@@ -46,7 +75,8 @@ def ottieni_o_crea_categoria(nome_categoria):
     risposta = requests.post(
         f"{WORDPRESS_URL}/categories",
         json={"name": nome_categoria, "slug": nome_categoria},
-        auth=auth
+        auth=auth,
+        verify=False  # Disabilita la verifica SSL (non raccomandato in produzione)
     )
     if risposta.status_code == 201:
         return risposta.json()['id']
@@ -93,11 +123,40 @@ def costruisci_contenuto_html(news_row, immagini):
         if pd.notnull(testo):
             contenuto += f'<p class="eplus-wrapper">{testo}</p>\n'
 
-    # Aggiungi immagini con didascalia
-    for img in immagini:
-        url = img['url']
-        didascalia = img['caption']
-        contenuto += f'<figure><img src="{url}" alt="{didascalia}" /><figcaption>{didascalia}</figcaption></figure>\n'
+    # Immagini: carosello se più di una, altrimenti singola
+    if len(immagini) > 1:
+        # Inizio carosello
+        contenuto += """
+<div class="wp-block-essential-blocks-slider  root-eb-slider-psob6">
+    <div class="eb-parent-wrapper eb-parent-eb-slider-psob6 ">
+        <div class="eb-slider-wrapper eb-slider-psob6" data-blockid="eb-slider-psob6" data-version="v4"
+            data-settings='{"arrows":true,"adaptiveHeight":true,"autoplay":false,"autoplaySpeed":3000,"dots":true,"fade":false,"infinite":true,"pauseOnHover":true,"slidesToShow":1,"speed":800,"vertical":false,"currentSlide":0,"rtl":false,"responsive":[{"breakpoint":1025,"settings":{"slidesToShow":1}},{"breakpoint":767,"settings":{"slidesToShow":1}}]}'
+            data-arrownexticon="fas fa-chevron-right" data-arrowprevicon="fas fa-chevron-left" data-lightbox="false">
+            <div class="eb-slider-init eb-slider-type-content">
+"""
+        for img in immagini:
+            contenuto += f"""
+                <div class="eb-slider-item content-2" data-src="{img['url']}">
+                    <div>
+                        <img class="eb-slider-image" data-lazy="{img['url']}" />
+                    </div>
+                    <div class="eb-slider-content align-left">
+                        <p class="eb-slider-title">{img['caption']}</p>
+                        <div class="eb-slider-button-wrapper"></div>
+                    </div>
+                </div>
+"""
+        # Fine carosello
+        contenuto += """
+            </div>
+        </div>
+    </div>
+</div>
+"""
+    elif len(immagini) == 1:
+        # Una sola immagine: figura semplice
+        img = immagini[0]
+        contenuto += f'<figure><img src="{img["url"]}" alt="{img["caption"]}" /><figcaption>{img["caption"]}</figcaption></figure>\n'
 
     # Firma
     firma = news_row.get('signature')
@@ -105,6 +164,7 @@ def costruisci_contenuto_html(news_row, immagini):
         contenuto += f"<p><em>{firma}</em></p>"
 
     return contenuto
+
 
 def ottieni_immagini(news_row):
     immagini = []
@@ -173,7 +233,8 @@ def pubblica_noticia(titolo, contenuto, data_pubblicazione, news_id, featured_im
     risposta = requests.post(
         f"{WORDPRESS_URL}/posts",
         json=dati,
-        auth=auth
+        auth=auth,
+        verify=False  # Disabilita la verifica SSL (non raccomandato in produzione)
     )
 
     if risposta.status_code == 201:
